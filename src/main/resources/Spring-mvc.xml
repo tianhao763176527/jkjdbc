@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd">
+
+    <description>Spring MVC Configuration</description>
+    <!-- 启用spring mvc 注解, 默认的注解映射的支持 -->
+    <mvc:annotation-driven/>
+    <!--指明 controller 所在包，并扫描其中的注解-->
+    <context:component-scan base-package="main.java.com.yh.test.controller"/>
+    <context:component-scan base-package="com.yh.monitor.action"/>
+    <context:component-scan base-package="com.yh.weixinkaf.action"/>
+
+    <!--定时方式1-->
+    <!--&lt;!&ndash;开启task任务扫描&ndash;&gt;-->
+    <!--<task:annotation-driven/>-->
+    <!--<context:component-scan base-package="com.yh.task.action"/>-->
+    <!--&lt;!&ndash;&lt;!&ndash;启用注解驱动的定时任务&ndash;&gt;&ndash;&gt;-->
+    <!--&lt;!&ndash;<task:annotation-driven scheduler="myScheduler"/>&ndash;&gt;-->
+    <!--&lt;!&ndash;&lt;!&ndash;推荐配置线程池，若不配置多任务下会有问题。后面会详细说明单线程的问题&ndash;&gt;&ndash;&gt;-->
+    <!--&lt;!&ndash;<task:scheduler id="myScheduler" pool-size="5"/>&ndash;&gt;-->
+
+    <!--定时方式2-->
+    <!--配置定时需要做的业务-->
+  <!--  <bean id="jkjdbcJob" class="com.yh.task.quartz.JKJdbcTask"></bean>
+    &lt;!&ndash;定时任务&ndash;&gt;
+    &lt;!&ndash;定义调用对象和调用对象方法，id是JobDeatil名称&ndash;&gt;
+    <bean id="jobtask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        &lt;!&ndash; 调用的类  &ndash;&gt;
+        <property name="targetObject" ref="jkjdbcJob" />
+        &lt;!&ndash; 调用类中的方法  &ndash;&gt;
+        <property name="targetMethod" value="doSomething" />
+        &lt;!&ndash; 是否并发  &ndash;&gt;
+        <property name ="concurrent" value ="false"  />
+    </bean>
+    &lt;!&ndash;定义触发时间&ndash;&gt;
+    <bean id="cronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean ">
+        <property name="jobDetail" ref="jobtask" />
+        &lt;!&ndash; cron表达式  &ndash;&gt;
+        <property name="cronExpression" value="0/1 * * * * ?" />
+    </bean>
+    &lt;!&ndash; 总管理类 如果将lazy-init='false'那么容器启动就会执行调度程序  &ndash;&gt;
+    <bean id="startQuertz" lazy-init="true" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="cronTrigger" />
+            </list>
+        </property>
+    </bean>
+
+    &lt;!&ndash;这个类是用来设置触发时间的， startJobs方法启动调度容器，然后按照上面触发器每隔1s执行所配置的myJob2.doSomething()方法 &ndash;&gt;
+    <bean id="quartzManager" class="com.yh.task.util.QuartManager" lazy-init="false" init-method="startJobs" >
+        &lt;!&ndash;这个对象一定要注入，这样类才能进行管理，还有在类型要用get set方法，不然会报错。&ndash;&gt;
+        <property name="scheduler" ref="startQuertz" />
+    </bean>-->
+
+
+    <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver">
+        <property name="defaultLocale" value="zh_CN" />
+    </bean>
+
+    <mvc:interceptors>
+        <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />
+    </mvc:interceptors>
+
+    <mvc:annotation-driven enable-matrix-variables="true">
+        <mvc:message-converters register-defaults="true">
+            <!--@RequestBoby,@ResponseBody采用FastJson支持 替換消息轉換類-兼容SpringMVC4.2以上版本 maxp add -->
+            <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter4">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <!-- 配置注解适配如@RequestMapping -->
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"></bean>
+
+    <!-- 配置注解@Controller识别-->
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"></bean>
+
+    <!-- 默认的视图解析器  -->
+    <bean id="defaultViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver" p:order="3">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+        <property name="contentType" value="text/html" />
+        <property name="prefix" value="/web/WEB-INF/page/"/>
+        <property name="suffix" value=".jsp"/><!--可为空,方便实现自已的依据扩展名来选择视图解释类的逻辑  -->
+    </bean>
+
+    <!-- Bean解析器,级别高于默认解析器,寻找bean对象进行二次处理 -->
+    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="0"/>
+    <!--&lt;!&ndash;redis的配置&ndash;&gt;-->
+    <!--<import resource="redis-config.xml"></import>-->
+    <!-- 对静态资源文件的访问， 将无法mapping到Controller的path交给default servlet handler处理 -->
+    <mvc:default-servlet-handler />
+    <mvc:annotation-driven></mvc:annotation-driven>
+</beans>
